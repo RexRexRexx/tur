@@ -14,7 +14,7 @@ TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, pybind11, cy
 termux_step_make() {
 	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
 	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
-	
+
 	pip install build
 	python -m build --wheel --no-isolation
 }
