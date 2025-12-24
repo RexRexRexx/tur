@@ -6,12 +6,21 @@ TERMUX_PKG_VERSION=1.6.1
 TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/${TERMUX_PKG_VERSION}.tar.gz
 TERMUX_PKG_SHA256=ff4a3272d5c6c0df6ef42a5ab0d11a4bac61505568f7f4a12c7f7bf0c9e2d978
 TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy, python-joblib, python-threadpoolctl"
-TERMUX_PKG_BUILD_DEPENDS="pybind11, cython, clang, pkg-config"
-TERMUX_PKG_PYTHON_BUILD_DEPS="numpy, scipy"   # short-circuits py-build
+TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, pybind11, cython, clang"
+
+# Only for ARM64 (phones)
+TERMUX_PKG_BLACKLISTED_ARCHES="i686 x86_64"
+
 termux_step_make() {
-    export BLAS=LAPACK=$PREFIX/lib/libopenblas.so
-    python -m build --wheel --outdir dist
+    export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
+    export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
+    
+    # Build the wheel
+    pip install build
+    python -m build --wheel --no-isolation
 }
+
 termux_step_make_install() {
-    pip install --prefix $PREFIX dist/*.whl
+    local wheel_file=$(ls dist/*.whl | head -1)
+    pip install --force-reinstall --no-deps --prefix="$TERMUX_PREFIX" "$wheel_file"
 }
