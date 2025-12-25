@@ -8,20 +8,20 @@ TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2
 TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, clang"
 
-# Install cython BEFORE the build starts
 termux_step_pre_configure() {
-	pip install cython pybind11
+	# Use --break-system-packages to bypass externally-managed protection
+	pip install --break-system-packages cython pybind11
 }
 
 termux_step_make() {
 	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
 	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
 
-	pip install build
+	pip install --break-system-packages build
 	python -m build --wheel --no-isolation
 }
 
 termux_step_make_install() {
 	local wheel_file=$(ls dist/*.whl | head -1)
-	pip install --prefix="$TERMUX_PREFIX" "$wheel_file"
+	pip install --break-system-packages --prefix="$TERMUX_PREFIX" "$wheel_file"
 }
