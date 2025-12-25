@@ -13,7 +13,7 @@ RexRexRexx_step_pre_configure() {
     # CRITICAL: Skip meson sanity checks for cross-compilation
     export MESONPY_SKIP_SANITY_CHECK=1
     export SKLEARN_BUILD_PARALLEL=0
-    
+
     # Create cross-compilation config for meson
     cat > ${TERMUX_PKG_TMPDIR}/meson-cross.ini << EOF
 [properties]
@@ -26,9 +26,9 @@ cpu_family = 'aarch64'
 cpu = 'aarch64'
 endian = 'little'
 EOF
-    
+
     export MESONPY_CROSS_ARGS="--cross-file ${TERMUX_PKG_TMPDIR}/meson-cross.ini"
-    
+
     # Use specific compiler flags for Android
     export LDFLAGS+=" -lm -llog"
     export CFLAGS+=" -fPIC"
