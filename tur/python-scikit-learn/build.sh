@@ -48,6 +48,10 @@ termux_step_pre_configure() {
 
 	# Install scipy for headers
 	python -m pip install --break-system-packages scipy
+
+	# Add compiler flags to suppress warnings that cause build failures
+	export CFLAGS="$CFLAGS -Wno-maybe-uninitialized"
+	export CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized"
 }
 
 termux_step_configure() {
@@ -59,7 +63,7 @@ termux_step_configure() {
 	sed -i 's|^\(\[properties\]\)$|\1\nnumpy-include-dir = '\'$PYTHON_SITE_PKG/numpy/_core/include\''|g' \
 		$TERMUX_MESON_WHEEL_CROSSFILE
 
-	# Add scipy include directory to help Cython find headers
+	# Add scipy include directory
 	local scipy_include=$(python -c "
 import scipy
 import os
@@ -73,16 +77,10 @@ else:
 
 	if [ -n "$scipy_include" ]; then
 		echo "Adding scipy include dir: $scipy_include"
-
-		# Initialize variables if not set
 		: ${C_INCLUDE_PATH:=}
 		: ${CPLUS_INCLUDE_PATH:=}
-
-		# Add to Cython include path via environment variable
 		export C_INCLUDE_PATH="$scipy_include:$C_INCLUDE_PATH"
 		export CPLUS_INCLUDE_PATH="$scipy_include:$CPLUS_INCLUDE_PATH"
-
-		# Also add to meson properties
 		sed -i "s|^\(\[properties\]\)$|\1\nscipy-linalg-dir = '$scipy_include'|g" \
 			$TERMUX_MESON_WHEEL_CROSSFILE
 	fi
