@@ -7,8 +7,13 @@ TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=git+https://github.com/scikit-learn/scikit-learn
 TERMUX_PKG_DEPENDS="libc++ (>= 29), libopenblas, python, python-numpy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static"
+
+# Get numpy version the same way python-scipy does
+_NUMPY_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python-numpy/build.sh; echo $TERMUX_PKG_VERSION)
+
 TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, 'Cython>=3.0.4', meson-python, build, joblib, threadpoolctl"
-TERMUX_PKG_PYTHON_BUILD_DEPS="'pybind11>=2.10.4', 'numpy==$TERMUX_PYTHON_NUMPY_VERSION'"
+TERMUX_PKG_PYTHON_BUILD_DEPS="'pybind11>=2.10.4', 'numpy==$_NUMPY_VERSION'"
+
 TERMUX_PKG_ON_DEVICE_BUILD_NOT_SUPPORTED=true
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
