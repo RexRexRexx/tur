@@ -21,9 +21,8 @@ TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
 TERMUX_PKG_EXCLUDED_ARCHES="i686"
 
 TERMUX_MESON_WHEEL_CROSSFILE="$TERMUX_PKG_TMPDIR/wheel-cross-file.txt"
+# scikit-learn doesn't use -Dblas or -Dlapack options
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
--Dblas=openblas
--Dlapack=openblas
 --cross-file $TERMUX_MESON_WHEEL_CROSSFILE
 "
 
@@ -46,6 +45,10 @@ termux_step_pre_configure() {
 	_setup_toolchain_ndk_gcc_15
 	LDFLAGS+=" -Wl,--no-as-needed,-lpython${TERMUX_PYTHON_VERSION},--as-needed"
 	LDFLAGS="-L$TERMUX_PKG_TMPDIR/_libunwind_libdir -l:libunwind.a ${LDFLAGS}"
+
+	# Set BLAS/LAPACK environment variables for scikit-learn
+	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
+	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
 }
 
 termux_step_configure() {
