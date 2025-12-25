@@ -83,9 +83,9 @@ scipy_path = os.path.dirname(scipy.__file__)
 # Look for linalg directory with .pxd files
 linalg_path = os.path.join(scipy_path, 'linalg')
 if os.path.exists(linalg_path):
-    print(linalg_path)
+	print(linalg_path)
 else:
-    print('')
+	print('')
 " 2>/dev/null || echo "")
 
 	if [ -n "$scipy_include" ]; then
