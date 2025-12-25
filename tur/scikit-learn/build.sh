@@ -7,24 +7,25 @@ TERMUX_PKG_SRCURL=https://files.pythonhosted.org/packages/source/s/scikit-learn/
 TERMUX_PKG_SHA256=a2f54c76accc15a34bfb9066e6c7a56c1e7235dda5762b990792330b52ccfb05
 TERMUX_PKG_DEPENDS="python"
 TERMUX_PKG_BUILD_IN_SRC=true
-TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, Cython==0.29.36, numpy, scipy, joblib, threadpoolctl"
+TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, setuptools, Cython==0.29.36, numpy, scipy, joblib, threadpoolctl"
 
 termux_step_pre_configure() {
 	export SKLEARN_NO_OPENMP=1
+
+	# Disable parallel build
 	export SKLEARN_BUILD_PARALLEL=1
+	export NPY_NUM_BUILD_JOBS=1
 
-	# Run cythonize separately first
-	cd "${TERMUX_PKG_SRCDIR}"
-	python setup.py build_ext --inplace || true
-
-	export CFLAGS="${CFLAGS} -Wno-unreachable-code -Wno-unused-function"
-	export CXXFLAGS="${CXXFLAGS} -Wno-unreachable-code -Wno-unused-function"
+	# Compiler flags
+	export CFLAGS="${CFLAGS} -Wno-unreachable-code -Wno-deprecated-declarations -O2"
+	export CXXFLAGS="${CXXFLAGS} -Wno-unreachable-code -Wno-deprecated-declarations -O2"
 
 	LDFLAGS+=" -lpython${TERMUX_PYTHON_VERSION}"
 }
 
 termux_step_make() {
-	pip wheel . --no-build-isolation --no-deps --wheel-dir "${TERMUX_PKG_BUILDDIR}" -v
+	# Use setup.py directly with bdist_wheel
+	python setup.py bdist_wheel -d "${TERMUX_PKG_BUILDDIR}"
 }
 
 termux_step_make_install() {
