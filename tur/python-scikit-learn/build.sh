@@ -9,8 +9,11 @@ TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, clang"
 
 termux_step_pre_configure() {
-	# Install cython
+	# Install cython and pybind11
 	python -m pip install --break-system-packages --user cython pybind11
+
+	# Install numpy via pip so meson can find it
+	python -m pip install --break-system-packages --user numpy
 
 	# Find cython binary
 	CYTHON_BIN=$(python -c "import cython; import os; print(os.path.join(os.path.dirname(cython.__file__), '..', '..', 'bin', 'cython'))" 2>/dev/null || echo "$HOME/.local/bin/cython")
@@ -20,7 +23,8 @@ termux_step_pre_configure() {
 	export CYTHON="$CYTHON_BIN"
 
 	echo "CYTHON set to: $CYTHON"
-	ls -la "$(which cython 2>/dev/null || echo /not/found)" || true
+	echo "Checking numpy import:"
+	python -c "import numpy; print('numpy version:', numpy.__version__); print('numpy include:', numpy.get_include())" || echo "numpy import failed"
 }
 
 termux_step_make() {
@@ -35,6 +39,9 @@ termux_step_make() {
 	elif which cython >/dev/null 2>&1; then
 		export CYTHON=$(which cython)
 	fi
+
+	# Verify numpy is available
+	python -c "import numpy; print('numpy found:', numpy.get_include())"
 
 	python -m pip install --break-system-packages build
 	python -m build --wheel --no-isolation
