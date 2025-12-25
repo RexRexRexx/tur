@@ -1,7 +1,7 @@
 TERMUX_PKG_HOMEPAGE=https://scikit-learn.org
 TERMUX_PKG_DESCRIPTION="Machine Learning in Python"
 TERMUX_PKG_LICENSE="BSD 3-Clause"
-TERMUX_PKG_MAINTAINER="@YOUR_GITHUB_USERNAME"
+TERMUX_PKG_MAINTAINER="@RexRexRexx"
 TERMUX_PKG_VERSION="1.4.0"
 TERMUX_PKG_SRCURL=https://files.pythonhosted.org/packages/source/s/scikit-learn/scikit-learn-${TERMUX_PKG_VERSION}.tar.gz
 TERMUX_PKG_SHA256=d4373c984eba20e393216edd51a3e3eede56cbe93d4247516d205643c3b93121

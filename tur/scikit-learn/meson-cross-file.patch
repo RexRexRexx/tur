@@ -1,0 +1,18 @@
+--- /dev/null
++++ b/meson-cross-file.ini
+@@ -0,0 +1,15 @@
++[binaries]
++c = 'clang'
++cpp = 'clang++'
++ar = 'llvm-ar'
++strip = 'llvm-strip'
++
++[built-in options]
++c_args = []
++cpp_args = []
++c_link_args = []
++cpp_link_args = []
++
++[host_machine]
++system = 'android'
++cpu_family = 'aarch64'
