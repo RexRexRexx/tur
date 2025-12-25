@@ -11,24 +11,20 @@ TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, Cython==0.29.36, numpy, scipy, joblib, thr
 
 termux_step_pre_configure() {
 	export SKLEARN_NO_OPENMP=1
-
-	# Disable parallel Cython compilation to avoid race conditions
 	export SKLEARN_BUILD_PARALLEL=1
 
-	# Set compiler flags
-	export CFLAGS="${CFLAGS} -Wno-unreachable-code -Wno-deprecated-declarations"
-	export CXXFLAGS="${CXXFLAGS} -Wno-unreachable-code -Wno-deprecated-declarations"
+	# Run cythonize separately first
+	cd "${TERMUX_PKG_SRCDIR}"
+	python setup.py build_ext --inplace || true
+
+	export CFLAGS="${CFLAGS} -Wno-unreachable-code -Wno-unused-function"
+	export CXXFLAGS="${CXXFLAGS} -Wno-unreachable-code -Wno-unused-function"
 
 	LDFLAGS+=" -lpython${TERMUX_PYTHON_VERSION}"
 }
 
 termux_step_make() {
-	# Build wheel with verbose output
-	pip wheel . \
-	--no-build-isolation \
-	--no-deps \
-	--wheel-dir "${TERMUX_PKG_BUILDDIR}" \
-	--verbose
+	pip wheel . --no-build-isolation --no-deps --wheel-dir "${TERMUX_PKG_BUILDDIR}" -v
 }
 
 termux_step_make_install() {
