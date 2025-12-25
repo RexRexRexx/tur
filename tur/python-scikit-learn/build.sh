@@ -1,47 +1,46 @@
-TERMUX_PKG_HOMEPAGE=https://scikit-learn.org
+TERMUX_PKG_HOMEPAGE=https://scikit-learn.org/
 TERMUX_PKG_DESCRIPTION="Machine learning in Python"
 TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@RexRexRexx"
 TERMUX_PKG_VERSION=1.6.1
-TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2ff
-TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
-TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, clang"
+TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=...
+TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy, python-joblib, python-threadpoolctl"
+TERMUX_PKG_BUILD_DEPENDS="python-cython, python-meson-python"
+TERMUX_PKG_PYTHON_COMMON_DEPS="wheel"
 
-termux_step_pre_configure() {
-	# Install ALL build dependencies via pip
-	python -m pip install --break-system-packages --user cython pybind11 numpy meson-python
+RexRexRexx_step_pre_configure() {
+    # CRITICAL: Skip meson sanity checks for cross-compilation
+    export MESONPY_SKIP_SANITY_CHECK=1
+    export SKLEARN_BUILD_PARALLEL=0
+    
+    # Create cross-compilation config for meson
+    cat > ${TERMUX_PKG_TMPDIR}/meson-cross.ini << EOF
+[properties]
+skip_sanity_check = true
+needs_exe_wrapper = true
 
-	# Critical: Add user bin directory to PATH for cython, f2py, etc.
-	export PATH="$HOME/.local/bin:$PATH"
-
-	# Optional: Verify installations
-	echo "Checking PATH: $PATH"
-	which cython || echo "WARNING: cython not found in PATH"
-	python -c "import numpy; print('numpy:', numpy.__version__)" || echo "numpy import failed"
-	python -c "import mesonpy; print('meson-python found')" 2>/dev/null || echo "WARNING: mesonpy import failed"
+[host_machine]
+system = 'linux'
+cpu_family = 'aarch64'
+cpu = 'aarch64'
+endian = 'little'
+EOF
+    
+    export MESONPY_CROSS_ARGS="--cross-file ${TERMUX_PKG_TMPDIR}/meson-cross.ini"
+    
+    # Use specific compiler flags for Android
+    export LDFLAGS+=" -lm -llog"
+    export CFLAGS+=" -fPIC"
+    export CXXFLAGS+=" -fPIC"
 }
 
-termux_step_make() {
-	export PATH="$HOME/.local/bin:$PATH"
-	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
-	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
-
-	cd "$TERMUX_PKG_SRCDIR"
-
-	# Use pip install with --no-build-isolation to use our pre-installed tools
-	python -m pip install --break-system-packages --no-build-isolation .
+RexRexRexx_step_make() {
+    # Build the package
+    pip install . --no-deps --no-build-isolation
 }
 
-termux_step_make_install() {
-	# Already installed in termux_step_make()
-	echo "Package installed during build phase"
-
-	# Optional: Verify installation
-	local site_packages=$(python -c "import site; print(site.getsitepackages()[0])" 2>/dev/null || echo "")
-	if [ -n "$site_packages" ] && [ -d "$TERMUX_PREFIX/$site_packages/sklearn" ]; then
-		echo "scikit-learn installed successfully to $TERMUX_PREFIX/$site_packages/sklearn"
-	else
-		echo "Warning: Could not verify scikit-learn installation location"
-	fi
+RexRexRexx_step_make_install() {
+    # Install to RexRexRexx prefix
+    pip install . --prefix=$TERMUX_PREFIX --no-deps --no-build-isolation
 }
