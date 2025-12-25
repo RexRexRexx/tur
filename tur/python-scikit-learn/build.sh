@@ -9,7 +9,6 @@ TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2
 TERMUX_PKG_DEPENDS="libc++ (>= 29), libopenblas, python, python-numpy, python-scipy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static"
 
-# Get numpy version the same way python-scipy does
 _NUMPY_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python-numpy/build.sh; echo $TERMUX_PKG_VERSION)
 
 TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, 'Cython>=3.0.4', meson-python, build, joblib, threadpoolctl"
@@ -32,7 +31,6 @@ bin/
 source $TERMUX_SCRIPTDIR/common-files/setup_toolchain_gcc.sh
 
 termux_step_pre_configure() {
-	# Similar to scipy's fix for libunwind
 	local _unwind_dir="$TERMUX_PKG_TMPDIR/_libunwind_libdir"
 	local _NDK_ARCH=$TERMUX_ARCH
 	test $_NDK_ARCH == 'i686' && _NDK_ARCH='i386'
@@ -45,23 +43,11 @@ termux_step_pre_configure() {
 	LDFLAGS+=" -Wl,--no-as-needed,-lpython${TERMUX_PYTHON_VERSION},--as-needed"
 	LDFLAGS="-L$TERMUX_PKG_TMPDIR/_libunwind_libdir -l:libunwind.a ${LDFLAGS}"
 
-	# Set BLAS/LAPACK environment variables
 	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
 	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
 
-	# Install scipy via pip (NO --user flag in virtualenv)
+	# Install scipy for headers
 	python -m pip install --break-system-packages scipy
-
-	# Also install other build dependencies without --user
-	python -m pip install --break-system-packages cython pybind11 numpy meson-python build joblib threadpoolctl
-
-	# Add pip's bin directory to PATH
-	export PATH="$HOME/.local/bin:$PATH"
-
-	# Verify installations
-	echo "Checking installations..."
-	which cython || echo "cython not in PATH"
-	python -c "import scipy; import os; print('scipy:', scipy.__version__); print('cython_blas.pxd exists:', os.path.exists(os.path.join(os.path.dirname(scipy.__file__), 'linalg', 'cython_blas.pxd')))" 2>/dev/null || echo "scipy import failed"
 }
 
 termux_step_configure() {
@@ -87,6 +73,11 @@ else:
 
 	if [ -n "$scipy_include" ]; then
 		echo "Adding scipy include dir: $scipy_include"
+
+		# Initialize variables if not set
+		: ${C_INCLUDE_PATH:=}
+		: ${CPLUS_INCLUDE_PATH:=}
+
 		# Add to Cython include path via environment variable
 		export C_INCLUDE_PATH="$scipy_include:$C_INCLUDE_PATH"
 		export CPLUS_INCLUDE_PATH="$scipy_include:$CPLUS_INCLUDE_PATH"
