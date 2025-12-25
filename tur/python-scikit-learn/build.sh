@@ -9,11 +9,17 @@ TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, clang"
 
 termux_step_pre_configure() {
-	# Install build dependencies
-	python -m pip install --break-system-packages --user cython pybind11 numpy
+	# Install ALL build dependencies via pip
+	python -m pip install --break-system-packages --user cython pybind11 numpy meson-python
 
-	# Add user bin to PATH
+	# Critical: Add user bin directory to PATH for cython, f2py, etc.
 	export PATH="$HOME/.local/bin:$PATH"
+
+	# Optional: Verify installations
+	echo "Checking PATH: $PATH"
+	which cython || echo "WARNING: cython not found in PATH"
+	python -c "import numpy; print('numpy:', numpy.__version__)" || echo "numpy import failed"
+	python -c "import mesonpy; print('meson-python found')" 2>/dev/null || echo "WARNING: mesonpy import failed"
 }
 
 termux_step_make() {
@@ -23,11 +29,19 @@ termux_step_make() {
 
 	cd "$TERMUX_PKG_SRCDIR"
 
-	# Direct pip install (builds in-place)
+	# Use pip install with --no-build-isolation to use our pre-installed tools
 	python -m pip install --break-system-packages --no-build-isolation .
 }
 
 termux_step_make_install() {
 	# Already installed in termux_step_make()
-	echo "Package already installed during build phase"
+	echo "Package installed during build phase"
+
+	# Optional: Verify installation
+	local site_packages=$(python -c "import site; print(site.getsitepackages()[0])" 2>/dev/null || echo "")
+	if [ -n "$site_packages" ] && [ -d "$TERMUX_PREFIX/$site_packages/sklearn" ]; then
+		echo "scikit-learn installed successfully to $TERMUX_PREFIX/$site_packages/sklearn"
+	else
+		echo "Warning: Could not verify scikit-learn installation location"
+	fi
 }
