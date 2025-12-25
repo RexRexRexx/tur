@@ -49,21 +49,19 @@ termux_step_pre_configure() {
 	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
 	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
 
-	# CRITICAL: Install scipy via pip to get Cython headers
-	# The system scipy-static doesn't include .pxd files
-	python -m pip install --break-system-packages --user scipy
+	# Install scipy via pip (NO --user flag in virtualenv)
+	python -m pip install --break-system-packages scipy
 
-	# Verify scipy Cython headers are available
-	echo "Checking for scipy Cython headers..."
-	find ~/.local -name "cython_blas.pxd" 2>/dev/null | head -5
-	python -c "
-import scipy
-import os
-scipy_path = os.path.dirname(scipy.__file__)
-cython_blas_path = os.path.join(scipy_path, 'linalg', 'cython_blas.pxd')
-print('scipy path:', scipy_path)
-print('cython_blas.pxd exists:', os.path.exists(cython_blas_path))
-" || echo "Failed to check scipy headers"
+	# Also install other build dependencies without --user
+	python -m pip install --break-system-packages cython pybind11 numpy meson-python build joblib threadpoolctl
+
+	# Add pip's bin directory to PATH
+	export PATH="$HOME/.local/bin:$PATH"
+
+	# Verify installations
+	echo "Checking installations..."
+	which cython || echo "cython not in PATH"
+	python -c "import scipy; import os; print('scipy:', scipy.__version__); print('cython_blas.pxd exists:', os.path.exists(os.path.join(os.path.dirname(scipy.__file__), 'linalg', 'cython_blas.pxd')))" 2>/dev/null || echo "scipy import failed"
 }
 
 termux_step_configure() {
@@ -80,12 +78,11 @@ termux_step_configure() {
 import scipy
 import os
 scipy_path = os.path.dirname(scipy.__file__)
-# Look for linalg directory with .pxd files
 linalg_path = os.path.join(scipy_path, 'linalg')
 if os.path.exists(linalg_path):
-	print(linalg_path)
+    print(linalg_path)
 else:
-	print('')
+    print('')
 " 2>/dev/null || echo "")
 
 	if [ -n "$scipy_include" ]; then
