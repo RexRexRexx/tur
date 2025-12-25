@@ -6,8 +6,8 @@ TERMUX_PKG_VERSION=1.6.1
 TERMUX_PKG_REVISION=1
 TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/${TERMUX_PKG_VERSION}.tar.gz
 TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2ff
-TERMUX_PKG_DEPENDS="libc++ (>= 29), libopenblas, python, python-numpy"
-TERMUX_PKG_BUILD_DEPENDS="python-numpy-static"
+TERMUX_PKG_DEPENDS="libc++ (>= 29), libopenblas, python, python-numpy, python-scipy"
+TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static"
 
 # Get numpy version the same way python-scipy does
 _NUMPY_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python-numpy/build.sh; echo $TERMUX_PKG_VERSION)
@@ -59,6 +59,13 @@ termux_step_configure() {
 		$TERMUX_MESON_WHEEL_CROSSFILE
 	sed -i 's|^\(\[properties\]\)$|\1\nnumpy-include-dir = '\'$PYTHON_SITE_PKG/numpy/_core/include\''|g' \
 		$TERMUX_MESON_WHEEL_CROSSFILE
+
+	# Add scipy include directory
+	local scipy_include=$(python -c "import scipy; import os; print(os.path.join(os.path.dirname(scipy.__file__), '.libs'))" 2>/dev/null || echo "")
+	if [ -n "$scipy_include" ]; then
+		sed -i "s|^\(\[properties\]\)$|\1\nscipy-include-dir = '$scipy_include'|g" \
+			$TERMUX_MESON_WHEEL_CROSSFILE
+	fi
 
 	(unset PYTHONPATH && termux_step_configure_meson)
 }
