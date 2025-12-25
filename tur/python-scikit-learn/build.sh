@@ -20,10 +20,8 @@ TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
 TERMUX_PKG_EXCLUDED_ARCHES="i686"
 
 TERMUX_MESON_WHEEL_CROSSFILE="$TERMUX_PKG_TMPDIR/wheel-cross-file.txt"
-# Disable OpenMP to avoid missing C++ headers
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --cross-file $TERMUX_MESON_WHEEL_CROSSFILE
--Dopenmp=false
 "
 
 TERMUX_PKG_RM_AFTER_INSTALL="
@@ -58,6 +56,13 @@ termux_step_pre_configure() {
 	# Disable OpenMP for Android compatibility
 	export SKLEARN_NO_OPENMP=1
 	export USE_OPENMP=0
+	export OMP_NUM_THREADS=1
+	export SKLEARN_BUILD_PARALLEL=0
+
+	# Also remove OpenMP flags from compiler
+	export CFLAGS="${CFLAGS//-fopenmp/}"
+	export CXXFLAGS="${CXXFLAGS//-fopenmp/}"
+	export LDFLAGS="${LDFLAGS//-fopenmp/}"
 }
 
 termux_step_configure() {
