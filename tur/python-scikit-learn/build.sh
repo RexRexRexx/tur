@@ -13,7 +13,7 @@ TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static"
 _NUMPY_VERSION=$(. $TERMUX_SCRIPTDIR/packages/python-numpy/build.sh; echo $TERMUX_PKG_VERSION)
 
 TERMUX_PKG_PYTHON_COMMON_DEPS="wheel, 'Cython>=3.0.4', meson-python, build, joblib, threadpoolctl"
-TERMUX_PKG_PYTHON_BUILD_DEPS="'pybind11>=2.10.4', 'numpy==$_NUMPY_VERSION'"
+TERMUX_PKG_PYTHON_BUILD_DEPS="'pybind11>=2.10.4', 'numpy==$_NUMPY_VERSION', 'scipy>=1.13.0'"
 
 TERMUX_PKG_ON_DEVICE_BUILD_NOT_SUPPORTED=true
 TERMUX_PKG_AUTO_UPDATE=true
@@ -21,7 +21,6 @@ TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
 TERMUX_PKG_EXCLUDED_ARCHES="i686"
 
 TERMUX_MESON_WHEEL_CROSSFILE="$TERMUX_PKG_TMPDIR/wheel-cross-file.txt"
-# scikit-learn doesn't use -Dblas or -Dlapack options
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --cross-file $TERMUX_MESON_WHEEL_CROSSFILE
 "
@@ -46,9 +45,25 @@ termux_step_pre_configure() {
 	LDFLAGS+=" -Wl,--no-as-needed,-lpython${TERMUX_PYTHON_VERSION},--as-needed"
 	LDFLAGS="-L$TERMUX_PKG_TMPDIR/_libunwind_libdir -l:libunwind.a ${LDFLAGS}"
 
-	# Set BLAS/LAPACK environment variables for scikit-learn
+	# Set BLAS/LAPACK environment variables
 	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
 	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
+
+	# CRITICAL: Install scipy via pip to get Cython headers
+	# The system scipy-static doesn't include .pxd files
+	python -m pip install --break-system-packages --user scipy
+
+	# Verify scipy Cython headers are available
+	echo "Checking for scipy Cython headers..."
+	find ~/.local -name "cython_blas.pxd" 2>/dev/null | head -5
+	python -c "
+import scipy
+import os
+scipy_path = os.path.dirname(scipy.__file__)
+cython_blas_path = os.path.join(scipy_path, 'linalg', 'cython_blas.pxd')
+print('scipy path:', scipy_path)
+print('cython_blas.pxd exists:', os.path.exists(cython_blas_path))
+" || echo "Failed to check scipy headers"
 }
 
 termux_step_configure() {
@@ -60,10 +75,27 @@ termux_step_configure() {
 	sed -i 's|^\(\[properties\]\)$|\1\nnumpy-include-dir = '\'$PYTHON_SITE_PKG/numpy/_core/include\''|g' \
 		$TERMUX_MESON_WHEEL_CROSSFILE
 
-	# Add scipy include directory
-	local scipy_include=$(python -c "import scipy; import os; print(os.path.join(os.path.dirname(scipy.__file__), '.libs'))" 2>/dev/null || echo "")
+	# Add scipy include directory to help Cython find headers
+	local scipy_include=$(python -c "
+import scipy
+import os
+scipy_path = os.path.dirname(scipy.__file__)
+# Look for linalg directory with .pxd files
+linalg_path = os.path.join(scipy_path, 'linalg')
+if os.path.exists(linalg_path):
+    print(linalg_path)
+else:
+    print('')
+" 2>/dev/null || echo "")
+
 	if [ -n "$scipy_include" ]; then
-		sed -i "s|^\(\[properties\]\)$|\1\nscipy-include-dir = '$scipy_include'|g" \
+		echo "Adding scipy include dir: $scipy_include"
+		# Add to Cython include path via environment variable
+		export C_INCLUDE_PATH="$scipy_include:$C_INCLUDE_PATH"
+		export CPLUS_INCLUDE_PATH="$scipy_include:$CPLUS_INCLUDE_PATH"
+
+		# Also add to meson properties
+		sed -i "s|^\(\[properties\]\)$|\1\nscipy-linalg-dir = '$scipy_include'|g" \
 			$TERMUX_MESON_WHEEL_CROSSFILE
 	fi
 
