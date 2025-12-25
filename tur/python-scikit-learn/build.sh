@@ -49,24 +49,26 @@ termux_step_pre_configure() {
 	# Install scipy for headers
 	python -m pip install --break-system-packages scipy
 
-	# DISABLE ALL WARNINGS AS ERRORS - get the build to complete
-	export CFLAGS="$CFLAGS -Wno-error"
-	export CXXFLAGS="$CXXFLAGS -Wno-error"
+	# FORCE REMOVE -fopenmp from ALL flags (most aggressive)
+	export CFLAGS=$(echo " $CFLAGS " | sed 's/ -fopenmp / /g')
+	export CXXFLAGS=$(echo " $CXXFLAGS " | sed 's/ -fopenmp / /g')
+	export LDFLAGS=$(echo " $LDFLAGS " | sed 's/ -fopenmp / /g')
 
-	# Also disable specific common warnings
-	export CFLAGS="$CFLAGS -Wno-maybe-uninitialized -Wno-discarded-qualifiers"
-	export CXXFLAGS="$CXXFLAGS -Wno-maybe-uninitialized -Wno-discarded-qualifiers"
+	# Add warning suppression
+	export CFLAGS="$CFLAGS -Wno-error -Wno-maybe-uninitialized -Wno-discarded-qualifiers"
+	export CXXFLAGS="$CXXFLAGS -Wno-error -Wno-maybe-uninitialized"
 
-	# Disable OpenMP for Android compatibility
+	# Force disable OpenMP
 	export SKLEARN_NO_OPENMP=1
 	export USE_OPENMP=0
 	export OMP_NUM_THREADS=1
 	export SKLEARN_BUILD_PARALLEL=0
 
-	# Also remove OpenMP flags from compiler
-	export CFLAGS="${CFLAGS//-fopenmp/}"
-	export CXXFLAGS="${CXXFLAGS//-fopenmp/}"
-	export LDFLAGS="${LDFLAGS//-fopenmp/}"
+	# Patch omp.h if found
+	find "$NDK" -name "omp.h" -type f 2>/dev/null | head -1 | while read omp_file; do
+		echo "Patching $omp_file"
+		sed -i 's|#include <bits/functexcept.h>|// REMOVED|g' "$omp_file" 2>/dev/null || true
+	done
 }
 
 termux_step_configure() {
@@ -78,22 +80,17 @@ termux_step_configure() {
 	sed -i 's|^\(\[properties\]\)$|\1\nnumpy-include-dir = '\'$PYTHON_SITE_PKG/numpy/_core/include\''|g' \
 		$TERMUX_MESON_WHEEL_CROSSFILE
 
-	# Add scipy include directory
+	# Add scipy include
 	local scipy_include=$(python -c "
-import scipy
-import os
-scipy_path = os.path.dirname(scipy.__file__)
-linalg_path = os.path.join(scipy_path, 'linalg')
-if os.path.exists(linalg_path):
-	print(linalg_path)
-else:
-	print('')
+import scipy; import os
+p = os.path.dirname(scipy.__file__)
+l = os.path.join(p, 'linalg')
+print(l) if os.path.exists(l) else print('')
 " 2>/dev/null || echo "")
 
 	if [ -n "$scipy_include" ]; then
 		echo "Adding scipy include dir: $scipy_include"
-		: ${C_INCLUDE_PATH:=}
-		: ${CPLUS_INCLUDE_PATH:=}
+		: ${C_INCLUDE_PATH:=}; : ${CPLUS_INCLUDE_PATH:=}
 		export C_INCLUDE_PATH="$scipy_include:$C_INCLUDE_PATH"
 		export CPLUS_INCLUDE_PATH="$scipy_include:$CPLUS_INCLUDE_PATH"
 		sed -i "s|^\(\[properties\]\)$|\1\nscipy-linalg-dir = '$scipy_include'|g" \
