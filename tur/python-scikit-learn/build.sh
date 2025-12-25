@@ -4,7 +4,8 @@ TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@RexRexRexx"
 TERMUX_PKG_VERSION=1.6.1
 TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=git+https://github.com/scikit-learn/scikit-learn
+TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2ff
 TERMUX_PKG_DEPENDS="libc++ (>= 29), libopenblas, python, python-numpy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static"
 
@@ -17,7 +18,7 @@ TERMUX_PKG_PYTHON_BUILD_DEPS="'pybind11>=2.10.4', 'numpy==$_NUMPY_VERSION'"
 TERMUX_PKG_ON_DEVICE_BUILD_NOT_SUPPORTED=true
 TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_UPDATE_TAG_TYPE="latest-release-tag"
-TERMUX_PKG_EXCLUDED_ARCHES="i686"  # Optional: exclude problematic architectures
+TERMUX_PKG_EXCLUDED_ARCHES="i686"
 
 TERMUX_MESON_WHEEL_CROSSFILE="$TERMUX_PKG_TMPDIR/wheel-cross-file.txt"
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
