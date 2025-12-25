@@ -14,15 +14,15 @@ TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
 TERMUX_PKG_BUILD_DEPENDS="python-numpy-static, python-scipy-static, clang"
 
 termux_step_make() {
-    export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
-    export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
+	export BLAS="$TERMUX_PREFIX/lib/libopenblas.so"
+	export LAPACK="$TERMUX_PREFIX/lib/libopenblas.so"
 
-    # Install all Python build tools via pip
-    pip install build cython pybind11
-    python -m build --wheel --no-isolation
+	# Install all Python build tools via pip
+	pip install build cython pybind11
+	python -m build --wheel --no-isolation
 }
 
 termux_step_make_install() {
-    local wheel_file=$(ls dist/*.whl | head -1)
-    pip install --prefix="$TERMUX_PREFIX" "$wheel_file"
+	local wheel_file=$(ls dist/*.whl | head -1)
+	pip install --prefix="$TERMUX_PREFIX" "$wheel_file"
 }
