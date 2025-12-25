@@ -4,7 +4,7 @@ TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@RexRexRexx"
 TERMUX_PKG_VERSION=1.6.1
 TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=ff4a3272d5c6c0df6ef42a5ab0d11a4bac61505568f7f4a12c7f7bf0c9e2d978
+TERMUX_PKG_SHA256=88c1816c89d2b27f2506d155e1195d71fc9d935bbe1968ce02b0e9ddd659b2ff
 
 # RUNTIME dependencies (must exist in termux-main or tur-packages)
 TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy"
