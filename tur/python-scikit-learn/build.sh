@@ -4,12 +4,12 @@ TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@RexRexRexx"
 TERMUX_PKG_VERSION=1.6.1
 TERMUX_PKG_SRCURL=https://github.com/scikit-learn/scikit-learn/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=...
+TERMUX_PKG_SHA256=f4f8247b43d6ac4cffb266522fe6f7eb3ef8e0ff1c2c4c9f4db42956e56f8b37
 TERMUX_PKG_DEPENDS="python, python-numpy, python-scipy, python-joblib, python-threadpoolctl"
 TERMUX_PKG_BUILD_DEPENDS="python-cython, python-meson-python"
 TERMUX_PKG_PYTHON_COMMON_DEPS="wheel"
 
-RexRexRexx_step_pre_configure() {
+termux_step_pre_configure() {
 	# CRITICAL: Skip meson sanity checks for cross-compilation
 	export MESONPY_SKIP_SANITY_CHECK=1
 	export SKLEARN_BUILD_PARALLEL=0
@@ -35,12 +35,12 @@ EOF
 	export CXXFLAGS+=" -fPIC"
 }
 
-RexRexRexx_step_make() {
+termux_step_make() {
 	# Build the package
 	pip install . --no-deps --no-build-isolation
 }
 
-RexRexRexx_step_make_install() {
-	# Install to Termux prefix
+termux_step_make_install() {
+	# Install to termux prefix
 	pip install . --prefix=$TERMUX_PREFIX --no-deps --no-build-isolation
 }
